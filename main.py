@@ -10,6 +10,7 @@ import httpx
 import os
 import time
 
+app = FastAPI(title="AI Trade Opportunities API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,9 +32,9 @@ genai.configure(api_key=GEMINI_API_KEY)
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_MINUTES = 60
 
+
 # ---------------- APP ----------------
 
-app = FastAPI(title="AI Trade Opportunities API")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -186,7 +187,7 @@ Output should be:
 """
 
     try:
-        model = genai.GenerativeModel("gemini-pro")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(prompt)
 
         if response and hasattr(response, "text"):
