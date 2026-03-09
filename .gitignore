@@ -1,0 +1,6 @@
+# Virtual environment directories
+venv/
+venv/
+env/
+ENV/
+t_env/
