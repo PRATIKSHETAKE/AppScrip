@@ -20,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------------- ENV ----------------
+# Env Setup- we setup the api key strings which are stored locally on the .env folder
 
 load_dotenv()
 
@@ -33,7 +33,7 @@ ALGORITHM = "HS256"
 TOKEN_EXPIRE_MINUTES = 60
 
 
-# ---------------- APP ----------------
+# App Setup
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -44,7 +44,7 @@ rate_store = {}
 RATE_LIMIT = 5
 RATE_WINDOW = 60
 
-# ---------------- MODELS ----------------
+# Pydantic data models used to validate and structure the response.
 
 class AnalysisResponse(BaseModel):
     sector: str
@@ -56,7 +56,7 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-# ---------------- TOKEN ----------------
+# Creating JWT authentication token.
 
 def create_token(username: str):
 
@@ -75,7 +75,7 @@ def create_token(username: str):
     return token
 
 
-# ---------------- AUTH ----------------
+# Validating JWT token sent by client
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
 
@@ -97,7 +97,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-# ---------------- RATE LIMIT ----------------
+# Rate limiting for each user to avoid a too many request from single user at a time.
 
 def check_rate(user):
 
@@ -115,7 +115,7 @@ def check_rate(user):
     bucket["tokens"] -= 1
 
 
-# ---------------- MARKET DATA ----------------
+# Browsing web using DuckDuckGo search engine..
 
 async def fetch_market_news(sector):
 
@@ -138,13 +138,11 @@ async def fetch_market_news(sector):
             return "Market data unavailable"
 
 
-# ---------------- GEMINI ----------------
+# Sends prompt and recieves the analysis report. u can edit ur prompt here
 
 def analyze_with_gemini(sector, news):
 
     prompt = f"""
-You are a professional Market Research Analyst and AI Trend Strategist.
-
 Task:
 Analyze the {sector} sector in India using the following market data and news.
 
@@ -198,7 +196,7 @@ Output should be:
     except Exception as e:
         return f"AI analysis unavailable. Error: {str(e)}"
 
-# ---------------- REPORT ----------------
+# Defining a structured markeddown report.
 
 def generate_report(sector, analysis):
 
@@ -221,7 +219,7 @@ AI generated insights. Not financial advice.
 """
 
 
-# ---------------- AUTH ROUTES ----------------
+# auth routes.
 
 @app.get("/guest", response_model=TokenResponse)
 async def guest():
@@ -243,7 +241,7 @@ async def login():
     return {"access_token": token}
 
 
-# ---------------- MAIN API ----------------
+# main functions and API
 
 @app.get("/analyze/{sector}", response_model=AnalysisResponse)
 async def analyze_sector(
@@ -264,8 +262,6 @@ async def analyze_sector(
         "report_markdown": report
     }
 
-
-# ---------------- ROOT ----------------
 
 @app.get("/")
 def root():
