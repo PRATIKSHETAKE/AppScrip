@@ -164,5 +164,5 @@ http://127.0.0.1:8000
 8. now under /analyze/{sextor} click test it out
 9. there is the sector input box with technology placeholder type the sector you want eg. technology, education pharmaceutical, etc.
 10. now in response there is json file with 2 fields sector and report markdown.
-
-if there is any error just comment i will look into it.
+There is another branch with simple end to end website
+If there is any error just comment i will look into it.
