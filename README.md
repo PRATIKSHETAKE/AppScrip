@@ -138,6 +138,8 @@ GEMINI_API_KEY=<your_api_key_string>
 
 ## 4. run the fast api
 
+before running the server check the available models at https://ai.google.dev/gemini-api/docs/models
+
 ```bash
 uvicorn main:app --reload
 ```
