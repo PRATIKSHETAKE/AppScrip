@@ -7,7 +7,7 @@ The system uses a **FastAPI backend**, integrates with **Google Gemini AI**, and
 
 Users can enter a sector (e.g., technology, pharmaceuticals, finance) and receive a structured analysis including market trends, trade opportunities, and potential risks.
 
-Note : This is just a backend server note end to end web application.
+Note : This is just a backend server not end to end web application.
 ---
 
 # Features
