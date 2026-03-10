@@ -89,6 +89,8 @@ project/
 ---
 
 # Setup Instructions
+this is local deployment i have deployed it on Render platform too.
+to test and check out the deployment u can skip to step 5
 
 ## 1. Clone Repository
 
@@ -136,7 +138,7 @@ which should have something like this
 SECRET_KEY=<your_secret_key>
 GEMINI_API_KEY=<your_api_key_string>
 
-## 4. run the fast api
+## 5. run the fast api
 
 before running the server check the available models at https://ai.google.dev/gemini-api/docs/models
 i have used "gemini-2.5-flash"
@@ -150,7 +152,7 @@ then ur server will run at(default)
 http://127.0.0.1:8000
 ```
 
-## 5. Testing the FastAPI
+## 6. Testing the FastAPI
 1. Open Swagger documentation.
    ```bash
    http://127.0.0.1:8000/docs
