@@ -1,6 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException, Path
+from fastapi import FastAPI, Depends, HTTPException, Path, Request
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
@@ -10,17 +14,7 @@ import httpx
 import os
 import time
 
-app = FastAPI(title="AI Trade Opportunities API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Env Setup- we setup the api key strings which are stored locally on the .env folder
+# ---------------- ENV ----------------
 
 load_dotenv()
 
@@ -32,9 +26,23 @@ genai.configure(api_key=GEMINI_API_KEY)
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_MINUTES = 60
 
+# ---------------- APP ----------------
 
-# App Setup
+app = FastAPI(title="AI Trade Opportunities")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# serve static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# templates
+templates = Jinja2Templates(directory="templates")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -44,7 +52,7 @@ rate_store = {}
 RATE_LIMIT = 5
 RATE_WINDOW = 60
 
-# Pydantic data models used to validate and structure the response.
+# ---------------- MODELS ----------------
 
 class AnalysisResponse(BaseModel):
     sector: str
@@ -55,8 +63,7 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
-
-# Creating JWT authentication token.
+# ---------------- TOKEN ----------------
 
 def create_token(username: str):
 
@@ -75,17 +82,12 @@ def create_token(username: str):
     return token
 
 
-# Validating JWT token sent by client
+# ---------------- AUTH ----------------
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
 
     try:
-        payload = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
-        )
-
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
 
         if username is None:
@@ -97,7 +99,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-# Rate limiting for each user to avoid a too many request from single user at a time.
+# ---------------- RATE LIMIT ----------------
 
 def check_rate(user):
 
@@ -115,7 +117,7 @@ def check_rate(user):
     bucket["tokens"] -= 1
 
 
-# Browsing web using DuckDuckGo search engine..
+# ---------------- MARKET DATA ----------------
 
 async def fetch_market_news(sector):
 
@@ -138,65 +140,39 @@ async def fetch_market_news(sector):
             return "Market data unavailable"
 
 
-# Sends prompt and recieves the analysis report. u can edit ur prompt here
+# ---------------- GEMINI ----------------
 
 def analyze_with_gemini(sector, news):
 
     prompt = f"""
-Task:
-Analyze the {sector} sector in India using the following market data and news.
+Analyze the {sector} sector in India.
 
-Market Data / News:
+Market Data:
 {news}
 
-Instructions:
-1. Use only relevant and recent information from the provided data.
-2. If information is missing or unclear, state the uncertainty instead of guessing.
-3. Ensure analysis is objective, data-driven, and concise.
-4. Do not generate harmful, illegal, or manipulative financial advice.
-
-Provide the analysis in the following structured format:
-
+Provide:
 1. Market Trends
-   - Identify the key current trends shaping the {sector} sector in India.
-   - Mention technological or AI-driven innovations influencing the market.
-
 2. Trade Opportunities
-   - Identify potential business or investment opportunities.
-   - Mention emerging startups, technologies, or market gaps.
-
 3. Risks and Challenges
-   - Economic risks
-   - Regulatory risks
-   - Technology or competition risks
-
 4. Investment Outlook
-   - Short-term outlook (6–12 months)
-   - Key factors investors should monitor.
-
-5. Data Reliability Note
-   - If the provided data is incomplete or outdated, explain limitations.
-
-Output should be:
-- Clear
-- Well structured
-- Fact-based
-- Easy to read
 """
 
     try:
-        model = genai.GenerativeModel("gemini-2.5-flash")
+
+        model = genai.GenerativeModel("gemini-1.5-flash")
+
         response = model.generate_content(prompt)
 
         if response and hasattr(response, "text"):
             return response.text
         else:
-            return "AI analysis generated but response format unexpected."
+            return "AI response format unexpected."
 
     except Exception as e:
         return f"AI analysis unavailable. Error: {str(e)}"
 
-# Defining a structured markeddown report.
+
+# ---------------- REPORT ----------------
 
 def generate_report(sector, analysis):
 
@@ -219,7 +195,14 @@ AI generated insights. Not financial advice.
 """
 
 
-# auth routes.
+# ---------------- WEBSITE ----------------
+
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
+# ---------------- AUTH ROUTES ----------------
 
 @app.get("/guest", response_model=TokenResponse)
 async def guest():
@@ -241,7 +224,7 @@ async def login():
     return {"access_token": token}
 
 
-# main functions and API
+# ---------------- MAIN API ----------------
 
 @app.get("/analyze/{sector}", response_model=AnalysisResponse)
 async def analyze_sector(
@@ -261,8 +244,3 @@ async def analyze_sector(
         "sector": sector,
         "report_markdown": report
     }
-
-
-@app.get("/")
-def root():
-    return {"message": "AI Trade Opportunities API running"}
