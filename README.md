@@ -1,4 +1,5 @@
 # AI Trade Opportunities API
+###Hosted at https://appscrip-8pjm.onrender.com
 
 ## Overview
 AI Trade Opportunities is a full-stack application that analyzes a given industry sector and generates an AI-powered market analysis report.
